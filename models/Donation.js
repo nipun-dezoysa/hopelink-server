@@ -1,22 +1,42 @@
 import mongoose from "mongoose";
+import validator from "validator";
 
-const CampaignSchema = new mongoose.Schema({
+const DonationSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "Please provide a name"],
   },
   cash: {
-    type: mongoose.Schema.Types.Decimal128,
-    required: true,
+    type: Number,
+    required: [true, "Please provide a donation amount"],
+    min: [0, "Donation amount must be a positive number"],
   },
   donatedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Campaign",
-    required: true,
+    required: [true, "Please specify the campaign"],
+  },
+  usertype: {
+    type: String,
+    enum: ["registered", "guest"],
+    required: [true, "Please specify if the donor is registered or a guest"],
+  },
+  email: {
+    type: String,
+    validate: {
+      validator: validator.isEmail,
+      message: "Please provide a valid email",
+    },
+    required: function () {
+      return this.usertype === "guest";
+    },
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
+    required: function () {
+      return this.usertype === "registered";
+    },
   },
   createdAt: {
     type: Date,
@@ -24,4 +44,4 @@ const CampaignSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("Campaign", CampaignSchema);
+export default mongoose.model("Donation", DonationSchema);
