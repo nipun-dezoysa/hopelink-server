@@ -2,6 +2,7 @@ import express from "express";
 import { authenticateUser } from "../middlewares/authentication.js";
 import uploadMiddleware from "../middlewares/uploadMiddleware.js";
 import Campaign from "../models/Campaign.js";
+import Donation from "../models/Donation.js";
 
 const router = express.Router();
 
@@ -128,13 +129,52 @@ router.get("/user/:id", authenticateUser, async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  try {
+    const campaigns = await Campaign.find();
+
+    const list = await Promise.all(
+      campaigns.map(async (campaign) => {
+        // Get the total sum of donations for this campaign
+        const totalDonations = await Donation.aggregate([
+          { $match: { donatedTo: campaign._id } },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: "$cash" },
+            },
+          },
+        ]);
+
+        const donationSum =
+          totalDonations.length > 0 ? totalDonations[0].total : 0;
+
+        const date = new Date(campaign.createdAt);
+        return {
+          id: campaign._id,
+          name: campaign.name,
+          description: campaign.description,
+          created: date.toDateString(),
+          phone: campaign.phone,
+          goal: campaign.goal,
+          raised: donationSum, 
+        };
+      })
+    );
+
+    res.status(200).json(list);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+});
+
 router.delete("/:id", authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
     const campaignDoc = await Campaign.findById(id);
     if (!campaignDoc)
       return res.status(404).send({ message: "Campaign not found" });
-    if(req.user.id != campaignDoc.createdBy)
+    if (req.user.id != campaignDoc.createdBy)
       return res.status(401).json({ message: "Unauthorized" });
     await campaignDoc.deleteOne();
     return res.status(200).json({ message: "Campaign deleted" });
