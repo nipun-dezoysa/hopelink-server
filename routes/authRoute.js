@@ -50,7 +50,7 @@ router.post("/login", async (req, res) => {
     if (passOk) {
       jwt.sign(
         { email, id: user._id },
-        "asdjpoiacvnjianouqweru3094uqbpoaf34124", //should be in .env
+        process.env.SECRET_KEY,
         {},
         (err, token) => {
           if (err) {

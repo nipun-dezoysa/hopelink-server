@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
   secure: false, // true for port 465, false for other ports
   auth: {
     user: "servicehopelink@gmail.com",
-    pass: "bfxgttqhrmspoars", //should put in .env file when project is in production
+    pass: process.env.GMAIL_PASS,
   },
 });
 

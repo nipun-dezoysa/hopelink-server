@@ -35,10 +35,7 @@ const authorizePermission = (role) => {
 
 const getUser = async (token) => {
   try {
-    const { email } = jwt.verify(
-      token,
-      "asdjpoiacvnjianouqweru3094uqbpoaf34124"
-    ); //should be in .env
+    const { email } = jwt.verify(token, process.env.SECRET_KEY);
     return await User.findOne({ email: email });
   } catch (error) {
     return null;

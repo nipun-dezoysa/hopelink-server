@@ -10,7 +10,15 @@ const app = express();
 import dotenv from "dotenv";
 dotenv.config();
 
-app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+// app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+  credentials: true, // Enable credentials (cookies, auth headers)
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -28,8 +36,9 @@ app.use("/auth", authRoute);
 app.use("/user", userRoute);
 app.use("/campaign", campaignRoute);
 
-mongoose.connect(
-  "mongodb+srv://nipunavishka123:V1VP99fzz9BGKf7A@cluster0.kbd2l.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-);
-
-app.listen(4000, () => console.log("Server running on port: 4000"));
+try {
+  mongoose.connect(process.env.DB_URL);
+  app.listen(4000, () => console.log("Server running on port: 4000"));
+} catch (err) {
+  console.log(err);
+}
