@@ -24,8 +24,9 @@ const CampaignSchema = new mongoose.Schema({
     required: [true, "Please provide a proof letter"],
   },
   goal: {
-    type: mongoose.Schema.Types.Decimal128,
-    required: [true, "Please provide a goal"],
+    type: Number,
+    required: [true, "Please provide a goal amount"],
+    min: [0, "Goal must be a positive number"],
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -54,6 +55,12 @@ const CampaignSchema = new mongoose.Schema({
   accNumber: {
     type: String,
     required: [true, "Please provide a bank acc number"],
+    validate: {
+      validator: function (v) {
+        return /^\d+$/.test(v); // Ensure it contains only digits
+      },
+      message: "Account number must contain only digits",
+    },
   },
   swift: {
     type: String,
