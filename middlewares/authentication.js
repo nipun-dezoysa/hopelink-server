@@ -13,7 +13,7 @@ const authenticateUser = async (req, res, next) => {
   return res.status(401).json({ message: "Unauthorized" });
 };
 
-const checkIfAuthenticated = async (req, res, next) => {
+const isAuthenticated = async (req, res, next) => {
   const { token } = req.cookies;
   if (token) {
     var user = await getUser(token);
@@ -42,4 +42,4 @@ const getUser = async (token) => {
   }
 };
 
-export { authenticateUser, authorizePermission };
+export { authenticateUser, authorizePermission, isAuthenticated };
