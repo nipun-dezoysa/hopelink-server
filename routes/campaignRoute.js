@@ -168,6 +168,48 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  try {
+    const campaignId = req.params.id;
+    const campaign = await Campaign.findById(campaignId);
+
+    if (!campaign) {
+      return res.status(404).json({ message: "Campaign not found" });
+    }
+
+    // Get all donations for this campaign
+    const donations = await Donation.find({ donatedTo: campaignId });
+
+    // Calculate the total sum of donations
+    const totalDonations = donations.reduce(
+      (sum, donation) => sum + parseFloat(donation.cash),
+      0
+    );
+
+    const date = new Date(campaign.createdAt);
+    const response = {
+      id: campaign._id,
+      name: campaign.name,
+      description: campaign.description,
+      created: date.toDateString(),
+      phone: campaign.phone,
+      goal: campaign.goal,
+      currentDonationSum: totalDonations,
+      donations: donations.map((donation) => ({
+        id: donation._id,
+        name: donation.name,
+        cash: donation.cash,
+        email: donation.email,
+        createdAt: donation.createdAt,
+      })), // Include the list of donations
+    };
+
+    res.status(200).json(response);
+  } catch (e) {
+    res.status(400).json({ message: e.message });
+  }
+});
+
 router.delete("/:id", authenticateUser, async (req, res) => {
   try {
     const { id } = req.params;
