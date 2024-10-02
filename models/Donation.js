@@ -4,9 +4,11 @@ import validator from "validator";
 const DonationSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, "Please provide a name"],
+    required: function () {
+      return this.usertype === "guest";
+    },
   },
-  cash: {
+  amount: {
     type: Number,
     required: [true, "Please provide a donation amount"],
     min: [0, "Donation amount must be a positive number"],
@@ -41,6 +43,15 @@ const DonationSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  session: {
+    type: String,
+    required: [true, "Please provide a session ID"],
+  },
+  status: {
+    type: String,
+    enum: ["success", "cancel", "pending"],
+    required: [true, "Please provide the status of the donation"],
   },
 });
 
