@@ -30,11 +30,13 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 import authRoute from "./routes/authRoute.js";
 import userRoute from "./routes/userRoute.js";
 import campaignRoute from "./routes/campaignRoute.js";
+import donationRoute from "./routes/donationRoute.js"
 
 //routes
 app.use("/auth", authRoute);
 app.use("/user", userRoute);
 app.use("/campaign", campaignRoute);
+app.use("/donation",donationRoute);
 
 try {
   mongoose.connect(process.env.DB_URL);
