@@ -66,6 +66,11 @@ const CampaignSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide a swift code"],
   },
+  status: {
+    type: String,
+    enum: ["pending", "accepted", "rejected"],
+    default: "pending",
+  },
 });
 
 export default mongoose.model("Campaign", CampaignSchema);

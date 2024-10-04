@@ -31,7 +31,7 @@ router.post(
         name,
         description,
         phone,
-        goal,
+        goal: goal * 100, // Convert to cents
         holder,
         bankName,
         accNumber,
@@ -137,11 +137,11 @@ router.get("/", async (req, res) => {
       campaigns.map(async (campaign) => {
         // Get the total sum of donations for this campaign
         const totalDonations = await Donation.aggregate([
-          { $match: { donatedTo: campaign._id } },
+          { $match: { donatedTo: campaign._id, status: "paid" } },
           {
             $group: {
               _id: null,
-              total: { $sum: "$cash" },
+              total: { $sum: "$amount" },
             },
           },
         ]);
@@ -156,8 +156,8 @@ router.get("/", async (req, res) => {
           description: campaign.description,
           created: date.toDateString(),
           phone: campaign.phone,
-          goal: campaign.goal,
-          raised: donationSum, 
+          goal: campaign.goal / 100,
+          raised: donationSum / 100,
         };
       })
     );
@@ -178,11 +178,17 @@ router.get("/:id", async (req, res) => {
     }
 
     // Get all donations for this campaign
-    const donations = await Donation.find({ donatedTo: campaignId });
+    const donations = await Donation.find({
+      donatedTo: campaignId,
+      status: "paid",
+    }).populate({
+      path: "createdBy",
+      select: "fname lname email",
+    });
 
     // Calculate the total sum of donations
     const totalDonations = donations.reduce(
-      (sum, donation) => sum + parseFloat(donation.cash),
+      (sum, donation) => sum + parseFloat(donation.amount),
       0
     );
 
@@ -192,16 +198,23 @@ router.get("/:id", async (req, res) => {
       name: campaign.name,
       description: campaign.description,
       created: date.toDateString(),
+      img: campaign.img,
       phone: campaign.phone,
-      goal: campaign.goal,
-      currentDonationSum: totalDonations,
+      goal: campaign.goal / 100,
+      currentDonationSum: totalDonations / 100,
       donations: donations.map((donation) => ({
         id: donation._id,
-        name: donation.name,
-        cash: donation.cash,
-        email: donation.email,
-        createdAt: donation.createdAt,
-      })), // Include the list of donations
+        name:
+          donation.usertype === "guest"
+            ? donation.name
+            : `${donation.createdBy.fname} ${donation.createdBy.lname}`,
+        email:
+          donation.usertype === "guest"
+            ? donation.email
+            : donation.createdBy.email,
+        amount: donation.amount / 100,
+        createdAt: new Date(donation.createdAt).toDateString(),
+      })),
     };
 
     res.status(200).json(response);
