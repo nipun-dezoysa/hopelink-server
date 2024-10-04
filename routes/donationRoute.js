@@ -32,7 +32,7 @@ router.post("/", isAuthenticated, async (req, res) => {
     });
     if (req.user) {
       await Donation.create({
-        amount,
+        amount:amount*100,
         donatedTo: campaign,
         usertype: "registered",
         createdBy: req.user._id,
@@ -41,7 +41,7 @@ router.post("/", isAuthenticated, async (req, res) => {
       });
     } else {
       await Donation.create({
-        amount,
+        amount: amount * 100,
         donatedTo: campaign,
         usertype: "guest",
         email,
@@ -63,8 +63,9 @@ router.get("/confirm", async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(req.query.session);
     const donation = await Donation.findOne({ session: req.query.session });
     await donation.updateOne({ status: session.payment_status });
-    // res.redirect(`${process.env.Client_URL}/donation/confirm/${session.payment_status}`);
-    res.status(200).json({ message: session.payment_status });
+    res.redirect(
+      `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo}?status=${session.payment_status}`
+    );
   } catch (e) {
     console.log(e);
   }
