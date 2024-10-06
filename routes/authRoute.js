@@ -47,6 +47,8 @@ router.post("/login", async (req, res) => {
   const user = await User.findOne({ email });
   if (user) {
     const passOk = bcrypt.compareSync(password, user.password);
+    if (user.status === "blocked")
+      return res.status(400).json({ message: "Account is blocked" });
     if (passOk) {
       jwt.sign(
         { email, id: user._id },
