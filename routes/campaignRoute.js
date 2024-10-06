@@ -51,7 +51,7 @@ router.post(
 );
 
 router.put(
-  "/",
+  "/:id",
   authenticateUser,
   uploadMiddleware.fields([
     { name: "img", maxCount: 1 },
@@ -72,7 +72,7 @@ router.put(
         accNumber,
         swift,
       } = req.body;
-      const campaignDoc = await Campaign.findById(id);
+      const campaignDoc = await getCampaign(req);
       if (!campaignDoc)
         return res.status(404).send({ message: "Campaign not found" });
 
@@ -82,7 +82,7 @@ router.put(
         name,
         description,
         phone,
-        goal,
+        goal: goal * 100,
         holder,
         bankName,
         accNumber,
@@ -153,6 +153,28 @@ router.get(
         };
       });
       res.status(200).json(list);
+    } catch (e) {
+      res.status(400).json({ message: "An unexpected error occurred." });
+      console.log(error);
+    }
+  }
+);
+
+router.put(
+  "/admin/:id",
+  async (req, res) => {
+    try {
+      const campaignDoc = await getCampaign(req);
+      if (!campaignDoc)
+        return res.status(404).send({ message: "Campaign not found" });
+
+      const { status } = req.body;
+      console.log(status);
+      
+      await campaignDoc.updateOne({
+        status,
+      });
+      res.status(201).json({status});
     } catch (e) {
       res.status(400).json({ message: "An unexpected error occurred." });
       console.log(error);
