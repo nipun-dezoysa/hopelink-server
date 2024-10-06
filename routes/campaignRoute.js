@@ -108,6 +108,7 @@ router.get("/user", authenticateUser, async (req, res) => {
         created: date.toDateString(),
         phone: campaign.phone,
         goal: campaign.goal,
+        status: campaign.status,
       };
     });
     res.status(200).json(list);
@@ -160,31 +161,28 @@ router.get(
   }
 );
 
-router.put(
-  "/admin/:id",
-  async (req, res) => {
-    try {
-      const campaignDoc = await getCampaign(req);
-      if (!campaignDoc)
-        return res.status(404).send({ message: "Campaign not found" });
+router.put("/admin/:id", async (req, res) => {
+  try {
+    const campaignDoc = await getCampaign(req);
+    if (!campaignDoc)
+      return res.status(404).send({ message: "Campaign not found" });
 
-      const { status } = req.body;
-      console.log(status);
-      
-      await campaignDoc.updateOne({
-        status,
-      });
-      res.status(201).json({status});
-    } catch (e) {
-      res.status(400).json({ message: "An unexpected error occurred." });
-      console.log(error);
-    }
+    const { status } = req.body;
+    console.log(status);
+
+    await campaignDoc.updateOne({
+      status,
+    });
+    res.status(201).json({ status });
+  } catch (e) {
+    res.status(400).json({ message: "An unexpected error occurred." });
+    console.log(error);
   }
-);
+});
 
 router.get("/", async (req, res) => {
   try {
-    const campaigns = await Campaign.find();
+    const campaigns = await Campaign.find({ status: "accepted" });
 
     const list = await Promise.all(
       campaigns.map(async (campaign) => {
@@ -224,7 +222,7 @@ router.get("/", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const campaign = await getCampaign(req);
-    if (!campaign) {
+    if (!campaign || campaign.status !== "accepted") {
       return res.status(404).json({ message: "Campaign not found" });
     }
 
