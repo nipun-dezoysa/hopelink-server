@@ -1,9 +1,13 @@
 import express from "express";
-import { authenticateUser } from "../middlewares/authentication.js";
+import {
+  authenticateUser,
+  authorizePermission,
+} from "../middlewares/authentication.js";
+import User from "../models/User.js";
 
 const router = express.Router();
 
-router.route("/").get(authenticateUser, async (req, res) => {
+router.get("/", authenticateUser, async (req, res) => {
   return res.status(200).json({
     id: req.user._id,
     email: req.user.email,
@@ -12,5 +16,28 @@ router.route("/").get(authenticateUser, async (req, res) => {
     role: req.user.role,
   });
 });
+
+router.get(
+  "/all",
+  authenticateUser,
+  authorizePermission("admin"),
+  async (req, res) => {
+    try {
+      const users = await User.find();
+      const list = users.map((user) => {
+        return {
+          id: user._id,
+          name: user.fname + " " + user.lname,
+          email: user.email,
+          role: user.role,
+        };
+      });
+      return res.status(200).json(list);
+    } catch (e) {
+      console.log("User Endpoint Error: ", e);
+      return res.status(400).json({ message: "unexpected error occurred" });
+    }
+  }
+);
 
 export default router;
