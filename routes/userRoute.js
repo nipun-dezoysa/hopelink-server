@@ -40,4 +40,22 @@ router.get(
   }
 );
 
+router.put(
+  "/update/:id",
+  authenticateUser,
+  authorizePermission("admin"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+      const user = await User.findById(id);
+      if (!user) return res.status(404).json({ message: "User not found" });
+      await user.updateOne({role});
+      return res.status(200).json({ message: "User updated" });
+    } catch (e) {
+      console.log("User Endpoint Error: ", e);
+      return res.status(400).json({ message: "unexpected error occurred" });
+    }
+  }
+);
 export default router;
