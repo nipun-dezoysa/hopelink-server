@@ -118,8 +118,7 @@ router.get("/user", authenticateUser, async (req, res) => {
 
 router.get("/user/:id", authenticateUser, async (req, res) => {
   try {
-    const { id } = req.params;
-    const campaignDoc = await Campaign.findById(id);
+    const campaignDoc = await getCampaign(req);
     if (!campaignDoc)
       return res.status(404).send({ message: "Campaign not found" });
 
@@ -202,16 +201,14 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const campaignId = req.params.id;
-    const campaign = await Campaign.findById(campaignId);
-
+    const campaign = await getCampaign(req);
     if (!campaign) {
       return res.status(404).json({ message: "Campaign not found" });
     }
 
     // Get all donations for this campaign
     const donations = await Donation.find({
-      donatedTo: campaignId,
+      donatedTo: campaign._id,
       status: "paid",
     }).populate({
       path: "createdBy",
@@ -257,8 +254,7 @@ router.get("/:id", async (req, res) => {
 
 router.delete("/:id", authenticateUser, async (req, res) => {
   try {
-    const { id } = req.params;
-    const campaignDoc = await Campaign.findById(id);
+    const campaignDoc = await getCampaign(req);
     if (!campaignDoc)
       return res.status(404).send({ message: "Campaign not found" });
     if (req.user.id != campaignDoc.createdBy)
@@ -269,5 +265,11 @@ router.delete("/:id", authenticateUser, async (req, res) => {
     res.status(400).json({ message: e.message });
   }
 });
+
+async function getCampaign(req) {
+  const { id } = req.params;
+  const campaignDoc = await Campaign.findById(id);
+  return campaignDoc;
+}
 
 export default router;
