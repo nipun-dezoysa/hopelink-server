@@ -1,5 +1,8 @@
 import express from "express";
-import { authenticateUser } from "../middlewares/authentication.js";
+import {
+  authenticateUser,
+  authorizePermission,
+} from "../middlewares/authentication.js";
 import uploadMiddleware from "../middlewares/uploadMiddleware.js";
 import Campaign from "../models/Campaign.js";
 import Donation from "../models/Donation.js";
@@ -128,6 +131,35 @@ router.get("/user/:id", authenticateUser, async (req, res) => {
     res.status(400).json({ message: e.message });
   }
 });
+
+router.get(
+  "/admin",
+  authenticateUser,
+  authorizePermission("admin"),
+  async (req, res) => {
+    try {
+      const campaigns = await Campaign.find().populate({
+        path: "createdBy",
+        select: "fname lname email",
+      });
+      const list = campaigns.map((campaign) => {
+        return {
+          id: campaign._id,
+          name: campaign.name,
+          organizer: campaign.createdBy.fname + " " + campaign.createdBy.lname,
+          description: campaign.description,
+          status: campaign.status,
+          donationValue: `${campaign.goal / 100} USD`,
+          proof: campaign.proof,
+        };
+      });
+      res.status(200).json(list);
+    } catch (e) {
+      res.status(400).json({ message: "An unexpected error occurred." });
+      console.log(error);
+    }
+  }
+);
 
 router.get("/", async (req, res) => {
   try {

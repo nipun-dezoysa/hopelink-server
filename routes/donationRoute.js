@@ -67,6 +67,7 @@ router.get("/confirm", async (req, res) => {
       `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo}?status=${session.payment_status}`
     );
   } catch (e) {
+    res.status(400).json({ message: "An unexpected error occurred." });
     console.log(e);
   }
 });
