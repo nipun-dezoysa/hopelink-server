@@ -19,11 +19,12 @@ router.get(
       const lastTwoDonations = await Donation.find()
         .sort({ createdAt: -1 }) // Sort by createdAt in descending order (-1 means newest first)
         .limit(2)
-        .populate("donatedTo", "name")
-        .populate({
-          path: "createdBy",
-          select: "fname lname email",
-        }); // Limit to 2 results
+        .populate([
+          { path: "donatedTo"},
+          {
+            path: "createdBy"
+          },
+        ]); // Limit to 2 results
       const list = lastTwoDonations.map((donation) => {
         return {
           name:
