@@ -5,6 +5,7 @@ import Donation from "../models/Donation.js";
 import Campaign from "../models/Campaign.js";
 import dotenv from "dotenv";
 import EmailBuilder from "../services/emailBuilder.js";
+import User from "../models/User.js";
 dotenv.config();
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -70,11 +71,27 @@ router.get("/confirm", async (req, res) => {
       },
       { path: "donatedTo" },
     ]);
+
+    const result = await Donation.aggregate([
+      {
+        $match: {
+          donatedTo: donation.donatedTo._id, // Match the specific campaign
+          status: "paid", // Only count "paid" donations
+        },
+      },
+      {
+        $group: {
+          _id: "$donatedTo", // Group by campaign
+          totalAmount: { $sum: "$amount" }, // Sum the "amount" field
+        },
+      },
+    ]);
+
+    const totalAmount = result.length > 0 ? result[0].totalAmount : 0;
+
     await donation.updateOne({ status: session.payment_status });
-    res.redirect(
-      `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo._id}?status=${session.payment_status}`
-    );
-    EmailBuilder.to(
+
+    await EmailBuilder.to(
       donation.usertype === "guest" ? donation.email : donation.createdBy.email
     )
       .donation(
@@ -85,6 +102,36 @@ router.get("/confirm", async (req, res) => {
         donation.donatedTo
       )
       .send();
+
+    const owner = await User.findById(donation.donatedTo.createdBy);
+
+    await EmailBuilder.to(owner.email)
+      .donationReceivedOwner(
+        owner.fname + " " + owner.lname,
+        donation.usertype === "guest"
+          ? donation.name
+          : `${donation.createdBy.fname} ${donation.createdBy.lname}`,
+        donation.amount / 100,
+        donation.donatedTo
+      )
+      .send();
+
+    if (
+      totalAmount < donation.donatedTo.goal &&
+      totalAmount + donation.amount >= donation.donatedTo.goal
+    ) {
+      EmailBuilder.to(owner.email)
+        .campaignGoalReached(
+          owner.fname + " " + owner.lname,
+          donation.donatedTo,
+          totalAmount + donation.amount
+        )
+        .send();
+    }
+
+    res.redirect(
+      `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo._id}?status=${session.payment_status}`
+    );
   } catch (e) {
     res.status(400).json({ message: "An unexpected error occurred." });
     console.log(e);
