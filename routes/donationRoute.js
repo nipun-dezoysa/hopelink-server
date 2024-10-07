@@ -4,7 +4,8 @@ import Stripe from "stripe";
 import Donation from "../models/Donation.js";
 import Campaign from "../models/Campaign.js";
 import dotenv from "dotenv";
-dotenv.config();  
+import EmailBuilder from "../services/emailBuilder.js";
+dotenv.config();
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -32,7 +33,7 @@ router.post("/", isAuthenticated, async (req, res) => {
     });
     if (req.user) {
       await Donation.create({
-        amount:amount*100,
+        amount: amount * 100,
         donatedTo: campaign,
         usertype: "registered",
         createdBy: req.user._id,
@@ -61,11 +62,29 @@ router.post("/", isAuthenticated, async (req, res) => {
 router.get("/confirm", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(req.query.session);
-    const donation = await Donation.findOne({ session: req.query.session });
+    const donation = await Donation.findOne({
+      session: req.query.session,
+    }).populate([
+      {
+        path: "createdBy",
+      },
+      { path: "donatedTo" },
+    ]);
     await donation.updateOne({ status: session.payment_status });
     res.redirect(
-      `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo}?status=${session.payment_status}`
+      `${process.env.CLIENT_URL}/campaigns/${donation.donatedTo._id}?status=${session.payment_status}`
     );
+    EmailBuilder.to(
+      donation.usertype === "guest" ? donation.email : donation.createdBy.email
+    )
+      .donation(
+        donation.usertype === "guest"
+          ? donation.name
+          : `${donation.createdBy.fname} ${donation.createdBy.lname}`,
+        donation.amount / 100,
+        donation.donatedTo
+      )
+      .send();
   } catch (e) {
     res.status(400).json({ message: "An unexpected error occurred." });
     console.log(e);

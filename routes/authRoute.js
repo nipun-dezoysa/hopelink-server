@@ -2,7 +2,7 @@ import express from "express";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import sendEmail from "../services/emailService.js";
+import EmailBuilder from "../services/emailBuilder.js";
 
 const salt = bcrypt.genSaltSync(10);
 const router = express.Router();
@@ -21,7 +21,7 @@ router.post("/register", async (req, res) => {
       phone,
       role: "user",
     });
-    sendEmail(email, "Welcome to Hope Link", "Thank you for signing up!");
+    EmailBuilder.to(email).registration().send();
     res.status(201).json({ message: "user account created." });
   } catch (error) {
     if (error.name === "ValidationError") {
