@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
-
+import dotenv from "dotenv";
+dotenv.config();
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -16,8 +17,8 @@ async function sendEmail(email, subject, text) {
       from: '"Hope Link" <servicehopelink@gmail.com>', // sender address
       to: email, // list of receivers
       subject: subject, // Subject line
-      text: text, // plain text body
-      //   html: "<b>Hello world?</b>", // html body
+      // text: text, // plain text body
+      html: text, // html body
     });
   } catch (error) {
     console.log(error);
