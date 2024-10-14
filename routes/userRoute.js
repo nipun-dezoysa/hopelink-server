@@ -14,6 +14,7 @@ router.get("/", authenticateUser, async (req, res) => {
     fname: req.user.fname,
     lname: req.user.lname,
     role: req.user.role,
+    phone: req.user.phone,
   });
 });
 
@@ -40,6 +41,17 @@ router.get(
     }
   }
 );
+
+router.put("/", authenticateUser, async (req, res) => {
+  try {
+    const { fname, lname, phone, email } = req.body;
+    await req.user.updateOne({ fname, lname, phone, email });
+    return res.status(200).json({ message: "User updated" });
+  } catch (e) {
+    console.log("User Details Update Endpoint Error: ", e);
+    return res.status(400).json({ message: "unexpected error occurred" });
+  }
+});
 
 router.put(
   "/update/:id",

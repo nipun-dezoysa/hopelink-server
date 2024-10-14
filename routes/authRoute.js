@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import EmailBuilder from "../services/emailBuilder.js";
+import { authenticateUser } from "../middlewares/authentication.js";
 
 const salt = bcrypt.genSaltSync(10);
 const router = express.Router();
@@ -73,6 +74,21 @@ router.post("/login", async (req, res) => {
     }
   } else {
     return res.status(400).json({ message: "Account not found" });
+  }
+});
+
+router.put("/password", authenticateUser, async (req, res) => {
+  try {
+    const { newPassword, confirmPassword, oldPassword } = req.body;
+    if (newPassword !== confirmPassword)
+      return res.status(400).json({ message: "Passwords do not match" });
+    if (!bcrypt.compareSync(oldPassword, req.user.password))
+      return res.status(400).json({ message: "Old password is incorrect" });
+    await req.user.updateOne({ password: bcrypt.hashSync(newPassword, salt) });
+    return res.status(200).json({ message: "Password Updated" });
+  } catch (e) {
+    console.log("User Details Update Endpoint Error: ", e);
+    return res.status(400).json({ message: "unexpected error occurred" });
   }
 });
 
