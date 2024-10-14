@@ -10,6 +10,8 @@ dotenv.config();
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const stripeConfirm = `https://hopelink-server.onrender.com/donation/confirm/?session={CHECKOUT_SESSION_ID}`;
+
 router.post("/", isAuthenticated, async (req, res) => {
   try {
     const { amount, campaign, email, name } = req.body;
@@ -29,8 +31,8 @@ router.post("/", isAuthenticated, async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.Server_URL}/donation/confirm/?session={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.Server_URL}/donation/confirm/?session={CHECKOUT_SESSION_ID}`,
+      success_url: stripeConfirm,
+      cancel_url: stripeConfirm,
     });
     if (req.user) {
       await Donation.create({
