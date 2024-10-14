@@ -59,13 +59,19 @@ router.post("/login", async (req, res) => {
           if (err) {
             return res.status(400).json({ message: "Failed to log in" });
           } else {
-            return res.cookie("token", token).json({
-              id: user._id,
-              email,
-              fname: user.fname,
-              lname: user.lname,
-              role: user.role,
-            });
+            return res
+              .cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: "None",
+              })
+              .json({
+                id: user._id,
+                email,
+                fname: user.fname,
+                lname: user.lname,
+                role: user.role,
+              });
           }
         }
       );
