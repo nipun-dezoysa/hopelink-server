@@ -18,8 +18,11 @@ router.post(
   ]),
   async (req, res) => {
     try {
-      const img = req.files["img"][0].filename;
-      const proof = req.files["proof"][0].filename;
+      const imgBuffer = req.files["img"][0].buffer;
+      const imgMimetype = req.files["img"][0].mimetype;
+      const proofBuffer = req.files["proof"][0].buffer;
+      const proofMimetype = req.files["proof"][0].mimetype;
+
       const {
         name,
         description,
@@ -30,6 +33,7 @@ router.post(
         accNumber,
         swift,
       } = req.body;
+
       const campDoc = await Campaign.create({
         name,
         description,
@@ -40,9 +44,16 @@ router.post(
         accNumber,
         swift,
         createdBy: req.user._id,
-        img,
-        proof,
+        img: {
+          data: imgBuffer,
+          contentType: imgMimetype,
+        },
+        proof: {
+          data: proofBuffer,
+          contentType: proofMimetype,
+        },
       });
+
       res.status(201).json(campDoc);
     } catch (e) {
       res.status(400).json({ message: e.message });
@@ -59,8 +70,17 @@ router.put(
   ]),
   async (req, res) => {
     try {
-      const img = req.files["img"] ? req.files["img"][0].filename : null;
-      const proof = req.files["proof"] ? req.files["proof"][0].filename : null;
+      const imgBuffer = req.files["img"] ? req.files["img"][0].buffer : null;
+      const imgMimetype = req.files["img"]
+        ? req.files["img"][0].mimetype
+        : null;
+      const proofBuffer = req.files["proof"]
+        ? req.files["proof"][0].buffer
+        : null;
+      const proofMimetype = req.files["proof"]
+        ? req.files["proof"][0].mimetype
+        : null;
+
       const {
         id,
         name,
@@ -87,8 +107,18 @@ router.put(
         bankName,
         accNumber,
         swift,
-        img: img || campaignDoc.img,
-        proof: proof || campaignDoc.proof,
+        img: imgBuffer
+          ? {
+              data: imgBuffer,
+              contentType: imgMimetype,
+            }
+          : campaignDoc.img,
+        proof: proofBuffer
+          ? {
+              data: proofBuffer,
+              contentType: proofMimetype,
+            }
+          : campaignDoc.proof,
       });
       res.status(201).json(campaignDoc);
     } catch (e) {
@@ -150,7 +180,6 @@ router.get(
           description: campaign.description,
           status: campaign.status,
           donationValue: `${campaign.goal / 100} USD`,
-          proof: campaign.proof,
         };
       });
       res.status(200).json(list);
@@ -247,7 +276,9 @@ router.get("/:id", async (req, res) => {
       name: campaign.name,
       description: campaign.description,
       created: date.toDateString(),
-      img: campaign.img,
+      img: `data:${
+        campaign.img.contentType
+      };base64,${campaign.img.data.toString("base64")}`, // Add image as base64 data URL
       phone: campaign.phone,
       goal: campaign.goal / 100,
       currentDonationSum: totalDonations / 100,
@@ -269,6 +300,26 @@ router.get("/:id", async (req, res) => {
     res.status(200).json(response);
   } catch (e) {
     res.status(400).json({ message: e.message });
+  }
+});
+
+router.get("/download-proof/:id", async (req, res) => {
+  try {
+    const campaign = await Campaign.findById(req.params.id);
+    if (!campaign || !campaign.proof) {
+      return res.status(404).json({ message: "Proof not found" });
+    }
+
+    // Set the headers to serve the file as a PDF
+    res.set({
+      "Content-Type": campaign.proof.contentType,
+      "Content-Disposition": `attachment; filename="proof-${campaign._id}.pdf"`,
+    });
+
+    // Send the PDF data
+    res.send(campaign.proof.data);
+  } catch (e) {
+    res.status(500).json({ message: "Error retrieving proof" });
   }
 });
 

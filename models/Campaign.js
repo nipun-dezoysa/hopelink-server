@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import validator from "validator";
 const CampaignSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -16,12 +16,12 @@ const CampaignSchema = new mongoose.Schema({
     maxlength: 10,
   },
   img: {
-    type: String,
-    required: [true, "Please provide a image"],
+    data: Buffer, // Store the image as binary data
+    contentType: String, // Store the image MIME type
   },
   proof: {
-    type: String,
-    required: [true, "Please provide a proof letter"],
+    data: Buffer, // Store the proof letter as binary data
+    contentType: String, // Store the proof's MIME type
   },
   goal: {
     type: Number,
