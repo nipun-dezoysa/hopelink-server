@@ -12,6 +12,13 @@ export default class EmailBuilder {
     return this;
   }
 
+  static async send() {
+    await sendEmail(this.email, this.subject, this.body);
+    this.email = "";
+    this.subject = "";
+    this.body = "";
+  }
+
   static registration() {
     this.subject = "Registration";
     this.body = `
@@ -125,12 +132,5 @@ export default class EmailBuilder {
       </div>
     `;
     return this;
-  }
-
-  static async send() {
-    await sendEmail(this.email, this.subject, this.body);
-    this.email = "";
-    this.subject = "";
-    this.body = "";
   }
 }
