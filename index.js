@@ -33,6 +33,10 @@ import campaignRoute from "./routes/campaignRoute.js";
 import donationRoute from "./routes/donationRoute.js";
 import dashboardRoute from "./routes/dashboardRoute.js";
 
+app.head("/", (req, res) => {
+  res.send("ok");
+});
+
 //routes
 app.use("/auth", authRoute);
 app.use("/user", userRoute);
