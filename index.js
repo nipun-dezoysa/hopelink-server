@@ -37,6 +37,10 @@ app.head("/", (req, res) => {
   res.send("ok");
 });
 
+app.get("/checkServer", (req, res) => {
+  res.send("ok");
+});
+
 //routes
 app.use("/auth", authRoute);
 app.use("/user", userRoute);
